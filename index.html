@@ -195,29 +195,40 @@
         let pm10Values = [];
         let sulfurValues = [];
         let temperatureValues = [];
+        let coValues = [];
+        let co2Values = [];
+        let humidity = [];
 
         if (querySnapshot.empty) {
           console.log("No documents found.");
         } else {
           querySnapshot.forEach((doc) => {
             let data = doc.data();
-            let timestamp = data.date;
+            console.log('data: ',data)
+            let timestamp = data.timestamp;
+            console.log('timestamp: ', timestamp)
             let date = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1e6);
             let formattedDate = date.toLocaleString();
 
             // Populate chart data
             dates.push(formattedDate);
-            pm2Values.push(data.pm2);
+            pm2Values.push(data.pm25);
             pm10Values.push(data.pm10);
-            sulfurValues.push(data.sulfur);
+            sulfurValues.push(data.nh4);
+            coValues.push(data.co);
+            co2Values.push(data.co2);
+            humidity.push(data.humidity);
             temperatureValues.push(data.temperature);
 
             // Populate DataTable
             tableData.push([
               formattedDate,
-              data.pm2,
+              data.co,
+              data.co2,
               data.pm10,
-              data.sulfur,
+              data.pm25,
+              data.nh4,
+              data.humidity,
               data.temperature
             ]);
           });
@@ -228,9 +239,12 @@
               data: tableData,
               columns: [
                 { title: "Date" },
-                { title: "PM2" },
+                { title: "CO" },
+                { title: "CO2" },
                 { title: "PM10" },
+                { title: "PM25" },
                 { title: "Sulfur" },
+                { title: "Humidity" },
                 { title: "Temperature" }
               ],
               paging: true,
@@ -250,9 +264,12 @@
               height: 350
             },
             series: [
-              { name: "PM2", data: pm2Values },
+              { name: "CO", data: coValues },
+              { name: "CO2", data: co2Values },
               { name: "PM10", data: pm10Values },
+              { name: "PM25", data: pm2Values },
               { name: "Sulfur", data: sulfurValues },
+              { name: "Humidity", data: humidity },
               { name: "Temperature", data: temperatureValues }
             ],
             xaxis: {
