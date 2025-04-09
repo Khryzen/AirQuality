@@ -113,28 +113,28 @@
       <div class="page-content">
         <section class="row">
           <div class="col-12 col-lg-12">
-<div class="card">
-  <div class="card-header">
-    <h5 class="card-title">
-      Daily Readings
-    </h5>
-  </div>
-  <div class="card-body">
-    <table class="table table-striped" id="readingsTable">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>PM2.5</th>
-          <th>PM10</th>
-          <th>Sulfur</th>
-          <th>Temperature</th>
-        </tr>
-      </thead>
-      <tbody id="readingTbody">
-      </tbody>
-    </table>
-  </div>
-</div>
+            <div class="card">
+              <div class="card-header">
+                <h5 class="card-title">
+                  Daily Readings
+                </h5>
+              </div>
+              <div class="card-body">
+                <table class="table table-striped" id="readingsTable">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>PM2.5</th>
+                      <th>PM10</th>
+                      <th>Sulfur</th>
+                      <th>Temperature</th>
+                    </tr>
+                  </thead>
+                  <tbody id="readingTbody">
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </section>
       </div>
@@ -160,82 +160,88 @@
 
   <!-- DataTables JS -->
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-  <script src="./../assets/static/js/pages/dashboard.js"></script>
+  <!-- <script src="./../assets/static/js/pages/dashboard.js"></script> -->
 
-<script type="module">
-  // Import Firebase SDKs
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+  <script type="module">
+    // Import Firebase SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
-  // Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyBVnA8VKav93Ozya0FzcxBtTWG18QGBVXA",
-    authDomain: "air-quality-63f8a.firebaseapp.com",
-    projectId: "air-quality-63f8a",
-    storageBucket: "air-quality-63f8a.firebasestorage.app",
-    messagingSenderId: "104696693327",
-    appId: "1:104696693327:web:035aee1a3de3dbd9d5603a",
-    measurementId: "G-404TLKZQET"
-  };
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVnA8VKav93Ozya0FzcxBtTWG18QGBVXA",
+      authDomain: "air-quality-63f8a.firebaseapp.com",
+      projectId: "air-quality-63f8a",
+      storageBucket: "air-quality-63f8a.firebasestorage.app",
+      messagingSenderId: "104696693327",
+      appId: "1:104696693327:web:035aee1a3de3dbd9d5603a",
+      measurementId: "G-404TLKZQET"
+    };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);  // Initialize Firestore
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);  // Initialize Firestore
 
-  // Function to fetch data from Firestore and populate the table
-  async function fetchData() {
-    console.log("Fetching data from Firestore...");
+    // Function to fetch data from Firestore and populate the table
+    async function fetchData() {
+      console.log("Fetching data from Firestore...");
 
-    try {
-      const querySnapshot = await getDocs(collection(db, "readings")); // Replace with your collection name
-      let tableData = [];
+      try {
+        const querySnapshot = await getDocs(collection(db, "readings")); // Replace with your collection name
+        let tableData = [];
 
-      if (querySnapshot.empty) {
-        console.log("No documents found.");
-      } else {
-        querySnapshot.forEach((doc) => {
-          let data = doc.data();
-          let timestamp = data.date;
-          let date = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1e6);
+        if (querySnapshot.empty) {
+          console.log("No documents found.");
+        } else {
+          querySnapshot.forEach((doc) => {
+            let data = doc.data();
+            // console.log(data)
+            if (data.timestamp && data.timestamp.seconds !== undefined) {
 
-          // Push row data into array
-          tableData.push([
-            date.toLocaleString(),  // Format the date
-            data.pm2,
-            data.pm10,
-            data.sulfur,
-            data.temperature
-          ]);
-        });
+              let timestamp = data.timestamp;
+              let date = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1e6);
 
-        // Initialize DataTables after data is loaded
-        $(document).ready(function () {
-          $('#readingsTable').DataTable({
-            data: tableData,  // Use the data array
-            columns: [
-              { title: "Date" },
-              { title: "PM2" },
-              { title: "PM10" },
-              { title: "Sulfur" },
-              { title: "Temperature" }
-            ],
-            paging: true,       // Enable pagination
-            searching: true,    // Enable search
-            ordering: true,     // Enable sorting
-            lengthMenu: [5, 10, 25, 50], // Set page length options
-            language: {
-              search: "🔍 Search:",  // Custom search placeholder
+              // Push row data into array
+              tableData.push([
+                date.toLocaleString(),
+                data.pm25 ?? 'N/A',
+                data.pm10 ?? 'N/A',
+                data.nh4 ?? 'N/A',
+                data.temperature ?? 'N/A'
+              ]);
+            }else{
+              console.warn('Skipping doc due to missing timestamp:', data);
             }
           });
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  }
 
-  fetchData(); // Call function to load data
-</script>
+          // Initialize DataTables after data is loaded
+          $(document).ready(function () {
+            $('#readingsTable').DataTable({
+              data: tableData, 
+              columns: [
+                { title: "Date" },
+                { title: "PM25" },
+                { title: "PM10" },
+                { title: "Sulfur" },
+                { title: "Temperature" }
+              ],
+              paging: true,      
+              searching: true, 
+              ordering: true,
+              lengthMenu: [5, 10, 25, 50],
+              language: {
+                search: "🔍 Search:",
+              }
+            });
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    }
+
+    fetchData();
+  </script>
 
 </body>
 

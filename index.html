@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 
 <head>
   <meta charset="UTF-8">
@@ -161,7 +161,7 @@
 
   <!-- Need: Apexcharts -->
   <script src="assets/extensions/apexcharts/apexcharts.min.js"></script>
-  <script src="assets/static/js/pages/dashboard.js"></script>
+  <!-- <script src="assets/static/js/pages/dashboard.js"></script> -->
 
   <!-- jQuery & DataTables JS -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -204,33 +204,39 @@
         } else {
           querySnapshot.forEach((doc) => {
             let data = doc.data();
-            console.log('data: ',data)
-            let timestamp = data.timestamp;
-            console.log('timestamp: ', timestamp)
-            let date = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1e6);
-            let formattedDate = date.toLocaleString();
+            // console.log('data: ',data)
 
-            // Populate chart data
-            dates.push(formattedDate);
-            pm2Values.push(data.pm25);
-            pm10Values.push(data.pm10);
-            sulfurValues.push(data.nh4);
-            coValues.push(data.co);
-            co2Values.push(data.co2);
-            humidity.push(data.humidity);
-            temperatureValues.push(data.temperature);
+              if (data.timestamp && data.timestamp.seconds !== undefined) {
+              let timestamp = data.timestamp;
+              // console.log('timestamp: ', timestamp);
+              let date = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1e6);
+              let formattedDate = date.toLocaleString();
 
-            // Populate DataTable
-            tableData.push([
-              formattedDate,
-              data.co,
-              data.co2,
-              data.pm10,
-              data.pm25,
-              data.nh4,
-              data.humidity,
-              data.temperature
-            ]);
+              // Populate chart data
+              dates.push(formattedDate);
+              pm2Values.push(data.pm25);
+              pm10Values.push(data.pm10);
+              sulfurValues.push(data.nh4);
+              coValues.push(data.co);
+              co2Values.push(data.co2);
+              humidity.push(data.humidity);
+              temperatureValues.push(data.temperature);
+
+              // Populate DataTable
+              tableData.push([
+                formattedDate,
+                data.co,
+                data.co2,
+                data.pm10,
+                data.pm25,
+                data.nh4,
+                data.humidity,
+                data.temperature,
+                // data.status
+              ]);
+            } else {
+              console.warn('Skipping doc due to missing timestamp:', data);
+            }
           });
 
           // Initialize DataTables
@@ -245,7 +251,8 @@
                 { title: "PM25" },
                 { title: "Sulfur" },
                 { title: "Humidity" },
-                { title: "Temperature" }
+                { title: "Temperature" },
+                // { title: "Status" }
               ],
               paging: true,
               searching: true,
@@ -270,13 +277,17 @@
               { name: "PM25", data: pm2Values },
               { name: "Sulfur", data: sulfurValues },
               { name: "Humidity", data: humidity },
-              { name: "Temperature", data: temperatureValues }
+              { name: "Temperature", data: temperatureValues },
+              // { name: "Status", data: status }
             ],
             xaxis: {
               categories: dates,
               labels: { rotate: -45 }
             },
-            stroke: { curve: "smooth" }
+            stroke: { 
+              curve: "smooth",
+              width: 1,
+            }
           };
 
           var chart = new ApexCharts(document.querySelector("#airQualityChart"), options);
