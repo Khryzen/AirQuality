@@ -167,139 +167,154 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    query,
+    orderBy,
+    limit
+  } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBVnA8VKav93Ozya0FzcxBtTWG18QGBVXA",
-      authDomain: "air-quality-63f8a.firebaseapp.com",
-      projectId: "air-quality-63f8a",
-      storageBucket: "air-quality-63f8a.firebasestorage.app",
-      messagingSenderId: "104696693327",
-      appId: "1:104696693327:web:035aee1a3de3dbd9d5603a",
-      measurementId: "G-404TLKZQET"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyCPZmKsYiQt9ni2lvHAmw_AzkluF6TTbNg",
+    authDomain: "air-quality-3373e.firebaseapp.com",
+    projectId: "air-quality-3373e",
+    storageBucket: "air-quality-3373e.firebasestorage.app",
+    messagingSenderId: "136585639456",
+    appId: "1:136585639456:web:b4b6f71efb51df4befae45",
+    measurementId: "G-E751BEMT03"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    async function fetchData() {
-      console.log("Fetching data from Firestore...");
+  async function fetchData() {
+    console.log("Fetching last 25 data points from Firestore...");
 
-      try {
-        const querySnapshot = await getDocs(collection(db, "readings"));
-        let tableData = [];
-        let dates = [];
-        let pm2Values = [];
-        let pm10Values = [];
-        let sulfurValues = [];
-        let temperatureValues = [];
-        let coValues = [];
-        let co2Values = [];
-        let humidity = [];
+    try {
+      const readingsQuery = query(
+        collection(db, "readings"),
+        orderBy("timestamp", "desc"),
+        limit(25)
+      );
+      const querySnapshot = await getDocs(readingsQuery);
 
-        if (querySnapshot.empty) {
-          console.log("No documents found.");
-        } else {
-          querySnapshot.forEach((doc) => {
-            let data = doc.data();
-            // console.log('data: ',data)
+      let tableData = [];
+      let dates = [];
+      let pm2Values = [];
+      let pm10Values = [];
+      let sulfurValues = [];
+      let temperatureValues = [];
+      let coValues = [];
+      let co2Values = [];
+      let humidity = [];
 
-              if (data.timestamp && data.timestamp.seconds !== undefined) {
-              let timestamp = data.timestamp;
-              // console.log('timestamp: ', timestamp);
-              let date = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1e6);
-              let formattedDate = date.toLocaleString();
+      if (querySnapshot.empty) {
+        console.log("No documents found.");
+      } else {
+        // Reverse to show oldest first
+        // let reversedDocs = querySnapshot.docs;
 
-              // Populate chart data
-              dates.push(formattedDate);
-              pm2Values.push(data.pm25);
-              pm10Values.push(data.pm10);
-              sulfurValues.push(data.nh4);
-              coValues.push(data.co);
-              co2Values.push(data.co2);
-              humidity.push(data.humidity);
-              temperatureValues.push(data.temperature);
+        querySnapshot.docs.forEach((doc) => {
+          let data = doc.data();
 
-              // Populate DataTable
-              tableData.push([
-                formattedDate,
-                data.co,
-                data.co2,
-                data.pm10,
-                data.pm25,
-                data.nh4,
-                data.humidity,
-                data.temperature,
-                // data.status
-              ]);
-            } else {
-              console.warn('Skipping doc due to missing timestamp:', data);
-            }
-          });
+          if (data.timestamp && data.timestamp.seconds !== undefined) {
+            let timestamp = data.timestamp;
+            // console.log('Timestamp: ',timestamp)
+            // console.log('Timestamp: ',new Date((timestamp.seconds) * 1000))
+            console.log('Timestamp: ', new Date((timestamp.seconds - 16 * 60 * 60) * 1000))
+            let rawDate = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1e6);
+            let adjustedDate = new Date(rawDate.getTime() - (16 * 60 * 60 * 1000)); // minus 8 hours
+            let formattedDate = adjustedDate.toLocaleString();
 
-          // Initialize DataTables
-          $(document).ready(function () {
-            $('#readingsTable').DataTable({
-              data: tableData,
-              columns: [
-                { title: "Date" },
-                { title: "CO" },
-                { title: "CO2" },
-                { title: "PM10" },
-                { title: "PM25" },
-                { title: "Sulfur" },
-                { title: "Humidity" },
-                { title: "Temperature" },
-                // { title: "Status" }
-              ],
-              paging: true,
-              searching: true,
-              ordering: true,
-              lengthMenu: [5, 10, 25, 50],
-              language: {
-                search: "🔍 Search:"
-              }
-            });
-          });
+            // Collect chart data
+            dates.push(formattedDate);
+            pm2Values.push(data.pm25);
+            pm10Values.push(data.pm10);
+            sulfurValues.push(data.nh4);
+            coValues.push(data.co);
+            co2Values.push(data.co2);
+            humidity.push(data.humidity);
+            temperatureValues.push(data.temperature);
 
-          // Render ApexChart
-          var options = {
-            chart: {
-              type: "line",
-              height: 350
-            },
-            series: [
-              { name: "CO", data: coValues },
-              { name: "CO2", data: co2Values },
-              { name: "PM10", data: pm10Values },
-              { name: "PM25", data: pm2Values },
-              { name: "Sulfur", data: sulfurValues },
-              { name: "Humidity", data: humidity },
-              { name: "Temperature", data: temperatureValues },
-              // { name: "Status", data: status }
+            // Collect DataTable row
+            tableData.push([
+              formattedDate,
+              data.co,
+              data.co2,
+              data.pm10,
+              data.pm25,
+              data.nh4,
+              data.humidity,
+              data.temperature,
+            ]);
+          } else {
+            console.warn("Skipping document due to missing timestamp:", data);
+          }
+        });
+        
+        // Initialize DataTable
+        $(document).ready(function () {
+          $('#readingsTable').DataTable({
+            data: tableData,
+            columns: [
+              { title: "Date" },
+              { title: "CO" },
+              { title: "CO2" },
+              { title: "PM10" },
+              { title: "PM25" },
+              { title: "Ammonia" },
+              { title: "Humidity" },
+              { title: "Temperature" },
             ],
-            xaxis: {
-              categories: dates,
-              labels: { rotate: -45 }
-            },
-            stroke: { 
-              curve: "smooth",
-              width: 1,
+            paging: true,
+            searching: true,
+            ordering: true,
+            lengthMenu: [5, 10, 25, 50],
+            language: {
+              search: "🔍 Search:"
             }
-          };
+          });
+        });
 
-          var chart = new ApexCharts(document.querySelector("#airQualityChart"), options);
-          chart.render();
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
+        // Render ApexChart
+        var options = {
+          chart: {
+            type: "line",
+            height: 350
+          },
+          series: [
+            { name: "CO", data: coValues },
+            { name: "CO2", data: co2Values },
+            { name: "PM10", data: pm10Values },
+            { name: "PM25", data: pm2Values },
+            { name: "Ammonia", data: sulfurValues },
+            { name: "Humidity", data: humidity },
+            { name: "Temperature", data: temperatureValues },
+          ],
+          xaxis: {
+            categories: dates,
+            labels: { rotate: -45 }
+          },
+          stroke: {
+            curve: "smooth",
+            width: 1
+          }
+        };
+
+        var chart = new ApexCharts(document.querySelector("#airQualityChart"), options);
+        chart.render();
       }
+    } catch (error) {
+      console.error("Error fetching data:", error);
     }
+  }
 
-    fetchData();
-  </script>
+  fetchData();
+</script>
 
 
 </body>
