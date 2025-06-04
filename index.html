@@ -257,7 +257,39 @@
         });
         
         // Initialize DataTable
+        // $(document).ready(function () {
+        //   $('#readingsTable').DataTable({
+        //     data: tableData,
+        //     columns: [
+        //       { title: "Date" },
+        //       { title: "CO" },
+        //       { title: "CO2" },
+        //       { title: "PM10" },
+        //       { title: "PM25" },
+        //       { title: "Ammonia" },
+        //       { title: "Humidity" },
+        //       { title: "Temperature" },
+        //     ],
+        //     paging: true,
+        //     searching: true,
+        //     ordering: true,
+        //     lengthMenu: [5, 10, 25, 50],
+        //     language: {
+        //       search: "🔍 Search:"
+        //     }
+        //   });
+        // });
+
         $(document).ready(function () {
+          // Inject date range filter inputs into DataTable controls
+          $("#readingsTable").before(`
+    <div id="dateFilters" style="margin-bottom: 10px;">
+      <label>From: <input type="date" id="minDate" style="margin-right: 20px;"></label>
+      <label>To: <input type="date" id="maxDate"></label>
+    </div>
+  `);
+
+          // Initialize DataTable
           $('#readingsTable').DataTable({
             data: tableData,
             columns: [
@@ -278,7 +310,29 @@
               search: "🔍 Search:"
             }
           });
+
+          // Date filter logic
+          $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+            const min = new Date($('#minDate').val());
+            const max = new Date($('#maxDate').val());
+            const date = new Date(data[0]);
+
+            if (
+              (!isNaN(min) && date < min) ||
+              (!isNaN(max) && date > max)
+            ) {
+              return false;
+            }
+
+            return true;
+          });
+
+          // Trigger table redraw on input
+          $('#minDate, #maxDate').on('change', function () {
+            $('#readingsTable').DataTable().draw();
+          });
         });
+
 
         // Render ApexChart
         var options = {
